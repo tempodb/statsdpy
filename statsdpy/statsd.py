@@ -9,6 +9,8 @@ import time
 import sys
 import os
 import re
+
+import datetime
 from tempodb import Client as TempoDBClient
 
 
@@ -38,6 +40,7 @@ class StatsdServer(object):
         self.timers = {}
         self.stats_seen = 0
 
+        self.tempodb_enabled = conf.get('tempodb_enabled', 'false') in TRUE_VALUES
         self.tempodb_key = conf.get('tempodb_key', '')
         self.tempodb_secret = conf.get('tempodb_secret', '')
         self.tempodb_host = conf.get('tempodb_host', 'localhost')
@@ -49,22 +52,54 @@ class StatsdServer(object):
 
     def report_stats(self, payload):
         """
-        Send data to graphite host
-
-        :param payload: Data to send to graphite
+        Send data
         """
         if self.debug:
-            print "reporting stats -> {\n%s}" % payload
+            print "reporting stats -> {\n%s}" % "".join(payload)
+        self.report_stats_graphite(payload)
+
+        if self.tempodb_enabled:
+            self.report_stats_tempodb(payload)
+
+    def report_stats_graphite(self, payload):
+        """
+        Send data to graphite host
+
+        :param stats: Data to send to graphite (list of graphite strings)
+        """
         try:
             with eventlet.Timeout(5, True) as timeout:
                 graphite = socket.socket()
                 graphite.connect(self.graphite_addr)
-                graphite.sendall(payload)
+                graphite.sendall("".join(payload))
                 graphite.close()
         except Exception as err:
             self.logger.critical("error connecting to graphite: %s" % err)
             if self.debug:
                 print "error connecting to graphite: %s" % err
+
+    def report_stats_tempodb(self, payload):
+        data = {}
+        for stat in payload:
+            components = stat[:-1].split(" ")
+            if len(components) == 3:
+                key = components[0]
+                value = float(components[1])
+                ts = datetime.datetime.utcfromtimestamp(int(components[2]))
+
+                data.setdefault(ts, list()).append({
+                    'key': key,
+                    'v': value,
+                })
+
+        try:
+            with eventlet.Timeout(5, True):
+                for key, value in data.items():
+                    self.tempodb_client.write_bulk(key, value)
+        except Exception as err:
+            self.logger.critical("error connecting to tempodb: %s" % err)
+            if self.debug:
+                print "error connecting to tempodb: %s" % err
 
     def stats_flush(self):
         """
@@ -115,7 +150,7 @@ class StatsdServer(object):
                             (key, total, tstamp))
                     self.timers[key] = []
             if payload:
-                self.report_stats("".join(payload))
+                self.report_stats(payload)
                 payload = []
 
     def process_timer(self, key, fields):
