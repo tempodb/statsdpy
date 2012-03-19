@@ -10,18 +10,22 @@ try:
     import json
 except ImportError:
     install_requires.append("simplejson")
+try:
+    import tempodb
+except ImportError:
+    install_requires.append("tempodb")
 
 name = "statsdpy"
 
 setup(
-    name = name,
-    version = version,
-    author = "Florian Hines",
-    author_email = "syn@ronin.io",
-    description = "statsdpy",
-    license = "Apache License, (2.0)",
-    keywords = "statsd",
-    url = "http://github.com/pandemicsyn/statsdpy",
+    name=name,
+    version=version,
+    author="Florian Hines",
+    author_email="syn@ronin.io",
+    description="statsdpy",
+    license="Apache License, (2.0)",
+    keywords="statsd",
+    url="http://github.com/pandemicsyn/statsdpy",
     packages=find_packages(),
     classifiers=[
         'Development Status :: 4 - Beta',
@@ -33,4 +37,3 @@ setup(
     install_requires=install_requires,
     scripts=['bin/statsdpy-server']
     )
-

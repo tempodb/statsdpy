@@ -9,6 +9,7 @@ import time
 import sys
 import os
 import re
+from tempodb import Client as TempoDBClient
 
 
 class StatsdServer(object):
@@ -17,7 +18,7 @@ class StatsdServer(object):
         TRUE_VALUES = set(('true', '1', 'yes', 'on', 't', 'y'))
         self.logger = logging.getLogger('statsdpy')
         self.logger.setLevel(logging.INFO)
-        self.syslog = SysLogHandler(address='/dev/log')
+        self.syslog = SysLogHandler()
         self.formatter = logging.Formatter('%(name)s: %(message)s')
         self.syslog.setFormatter(self.formatter)
         self.logger.addHandler(self.syslog)
@@ -36,6 +37,15 @@ class StatsdServer(object):
         self.counters = {}
         self.timers = {}
         self.stats_seen = 0
+
+        self.tempodb_key = conf.get('tempodb_key', '')
+        self.tempodb_secret = conf.get('tempodb_secret', '')
+        self.tempodb_host = conf.get('tempodb_host', 'localhost')
+        self.tempodb_port = int(conf.get('tempodb_port', 443))
+        self.tempodb_secure = conf.get('tempodb_secure', "true") in TRUE_VALUES
+        self.tempodb_client = TempoDBClient(self.tempodb_key, self.tempodb_secret, \
+                                            self.tempodb_host, self.tempodb_port, \
+                                            self.tempodb_secure)
 
     def report_stats(self, payload):
         """
