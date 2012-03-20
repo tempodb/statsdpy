@@ -1,6 +1,6 @@
 # statsdpy #
 
-Simple event based [statsd](http://github.com/etsy/statsd) implementation written in python using [eventlet](http://eventlet.net). 
+Simple event based [statsd](http://github.com/etsy/statsd) implementation written in python using [eventlet](http://eventlet.net).
 Its a work in progress but the basics are there.
 
 ### Configuration ###
@@ -16,12 +16,18 @@ statsdpy sample config:
     #listen_port = 8125
     #Debug mode is enabled by default!
     #debug = true
-    #How often to flush stats to graphite 
+    #How often to flush stats to graphite
     #flush_interval = 10
     #calculate XXth percentile
     #percent_threshold = 90
     #accept multiple events per packet
     #combined_events = no
+    #tempodb_enabled = true
+    #tempodb_key = api-key
+    #tempodb_secret = api-secret
+    #tempodb_host = api.tempo-db.com
+    #tempodb_port = 443
+    #tempodb_secure = true
 
  - Edit the config file to adjust your to your environment.
  - Start the service: `statsdpy-server start --conf=/path/to/your.conf`
@@ -70,7 +76,7 @@ This counter is being sampled at a 50% rate.
 ### Building packages ###
 
 Clone the version you want and build the package with [stdeb](https://github.com/astraw/stdeb "stdeb") (sudo apt-get install stdeb):
-    
+
     git clone git@github.com:pandemicsyn/statsdpy.git statsdpy-0.0.5
     cd statsdlog-0.0.5
     git checkout 0.0.5
